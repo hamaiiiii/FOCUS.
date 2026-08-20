@@ -1,26 +1,148 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+html{
+  background:#f0f0f0;
+}
+body{
+  margin:0 auto;
+  background:white;
+  max-width:600px;
+  min-height:100vh;
+  box-shadow:0 0 20px rgba(0,0,0,0.1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+header{
+  height:130px;
+  padding-top:50px;
+  border-bottom:1px solid black;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+#title{
+  display:flex;
+  justify-content:center;
+  font-size:clamp(20px,8vw,50px);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+#title-dot{
+  color:orange;
+}
+
+#end-screen{
+  display:flex;
+  justify-content:center;
+  height:100vh;
+}
+
+#end-screen p{
+  margin-top:280px;
+  font-weight:bold;
+}
+
+#menu{
+  display:flex;
+  gap:15px;
+  justify-content:end;
+  margin:15px;
+  font-size:clamp(12px,3vw,22px);
+}
+
+#menu-friend{
+  color:rgb(25, 144, 25);
+}
+
+#clock{
+  display:flex;
+  justify-content:center;
+  margin:90px 30px;
+  touch-action:none;
+}
+
+#time{
+  font-size:clamp(50px,10vw,80px);
+}
+
+.time-part{
+  cursor:pointer;
+  padding-bottom:4px;
+  border-bottom:3px solid transparent;
+}
+
+.time-part.selected{
+  border-bottom:3px solid black;
+}
+
+#start-button,
+#end-button{
+  margin:10px 0;
+  display:block;
+  margin-left:auto;
+  margin-right:auto;
+  padding:15px 25px;
+  border:2px solid rgb(186, 186, 186);
+  background:rgb(244, 244, 244);
+  font-size:clamp(15px,4vw,25px);
+  font-weight:bold;
+  border-radius:15px;
+  color:black;
+}
+
+#list{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  margin-top:25px;
+}
+
+#list-box{
+  border:1px solid black;
+  display:block;
+  padding:0 20px 10px;
+  width:80%;
+}
+
+#checklist{
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+
+#checklist li{
+  display:flex;
+  align-items:center;
+  padding:20px 0;
+  border-bottom:1px solid #ccc;
+}
+
+#checklist li:last-child{
+  border-bottom:none;
+}
+
+#checklist li input[type="checkbox"]{
+  width:20px;
+  height:20px;
+  margin:0;
+}
+
+#checklist li .item-text{
+  flex:1;
+  text-align:center;
+  font-size:18px;
+  margin:0 10px;
+}
+
+#checklist li .remove-button,
+#checklist li #add-button{
+  background:none;
+  border:none;
+  font-size:20px;
+  cursor:pointer;
+  width:30px;
+  color:black;
+}
+
+/* 取消線 */
+.item-text.done{
+  text-decoration:line-through;
+  color:#4b4b4b;
 }
