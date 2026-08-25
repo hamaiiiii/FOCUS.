@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { auth, googleProvider } from "@/lib/firebase"
+import { signInWithPopup, onAuthStateChanged, signOut, User } from "firebase/auth"
 
 export default function Home() {
   const clockRef = useRef<HTMLDivElement>(null)
@@ -13,7 +15,9 @@ export default function Home() {
   const[isFinished, setIsFinished] = useState(false)
   const[showEndScreen, setShowEndScreen] = useState(false)
   const[typingDone, setTypingDone] = useState(false)
+  const[user, setUser] = useState<User | null>(null)
 
+  // 開始
   function handleStart(){
     if(hours === 0 && minutes === 0) return
 
@@ -22,6 +26,7 @@ export default function Home() {
     // setRemainingSeconds(hours*3600 + minutes*60)
   }
 
+  // 終了
   const fullMessage = "お疲れ様でした。"
   const [typingIndex, setTypingIndex] = useState(0)
 
@@ -57,6 +62,12 @@ export default function Home() {
     setShowEndScreen(false)
     setIsRunning(false)
     setIsFinished(false)
+    setTypingDone(false)
+    setTypingIndex(0)
+    setHours(0)
+    setMinutes(0)
+    setSelectedUnit("minute")
+    setItems([])
   }
 
   useEffect(()=>{
@@ -76,6 +87,7 @@ export default function Home() {
       clearInterval(intervalId)
     }
   },[isRunning])
+  //
 
   function handleSelectHour(){
     setSelectedUnit("hour")
@@ -85,6 +97,7 @@ export default function Home() {
     setSelectedUnit("minute")
   }
 
+  // 時間カウント
   useEffect(()=>{
     const clockE1 = clockRef.current
     if(!clockE1) return
@@ -113,6 +126,65 @@ export default function Home() {
   const displayHours = isRunning?Math.floor(remainingSeconds/3600):hours
   const displayMinutes = isRunning?Math.floor((remainingSeconds%3600)/60):minutes
   const displaySeconds = isRunning?remainingSeconds%60:0
+  //
+
+  // リスト
+  type TodoItem = {
+    id:string
+    text:string
+    done:boolean
+  }
+
+  const [items, setItems] = useState<TodoItem[]>([])
+  const [newItemText, setNewItemText] = useState("")
+
+  //追加
+  function handleAddItem(){
+    if(newItemText.trim() === "") return
+    
+    const newItem: TodoItem = {
+      id:crypto.randomUUID(),
+      text:newItemText,
+      done:false,
+    }
+
+    setItems(prev => [...prev, newItem])
+    setNewItemText("")
+  }
+
+  //削除
+  function handleRemoveItem(id:string){
+    setItems(prev => prev.filter(item => item.id !== id))
+  }
+
+  //チェック状態
+  function handleToggleItem(id:string){
+    setItems(prev =>
+      prev.map(item =>
+        item.id === id ?{...item, done: !item.done}:item
+      )
+    )
+  }
+  //
+
+  //ログイン
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser)
+    })
+    return () => unsubscribe()
+  }, [])
+
+  function handleLogin(){
+    signInWithPopup(auth, googleProvider).catch((error) => {
+      console.error("ログイン失敗：", error)
+    })
+  }
+
+  function handleLogout(){
+    signOut(auth)
+  }
+
   return (
     <>
       <header>
@@ -154,11 +226,36 @@ export default function Home() {
         <div id="list">
           <div id="list-box">
             <ul id="checklist">
-              <li className="new-list">
-                <input type="checkbox" disabled/>
-                <input type="text" className="item-text" id="new-item-input" placeholder=""/>
-                <button id="add-button">+</button>
-              </li>
+              {items.map(item => (
+                <li key={item.id}>
+                  <input
+                    type="checkbox"
+                    checked={item.done}
+                    onChange={() => handleToggleItem(item.id)}
+                  />
+                  <span className={`item-text ${item.done ? "done":""}`}>
+                    {item.text}
+                  </span>
+                  {!isRunning && (
+                    <button 
+                      className="remove-button" onClick={() => handleRemoveItem(item.id)}>-</button>
+                  )}
+                </li>
+              ))}
+              {!isRunning &&(
+                <li className="new-list">
+                  <input type="checkbox" disabled/>
+                  <input 
+                    type="text" 
+                    className="item-text" 
+                    id="new-item-input" 
+                    placeholder="" 
+                    value={newItemText} 
+                    onChange={(e)=>setNewItemText(e.target.value)}
+                  />
+                  <button id="add-button" onClick={handleAddItem}>+</button>
+                </li>
+              )}
             </ul>
           </div>
         </div>
