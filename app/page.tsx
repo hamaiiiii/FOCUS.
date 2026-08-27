@@ -16,6 +16,7 @@ export default function Home() {
   const[showEndScreen, setShowEndScreen] = useState(false)
   const[typingDone, setTypingDone] = useState(false)
   const[user, setUser] = useState<User | null>(null)
+  const[showMyPage, setShowMyPage] = useState(false)
 
   // 開始
   function handleStart(){
@@ -167,7 +168,7 @@ export default function Home() {
   }
   //
 
-  //ログイン
+  //ログイン・ログアウト
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser)
@@ -183,7 +184,9 @@ export default function Home() {
 
   function handleLogout(){
     signOut(auth)
+    setShowMyPage(false)
   }
+  //
 
   return (
     <>
@@ -201,65 +204,85 @@ export default function Home() {
       )}
 
       <main>
-        <div id="menu">
-          <div id="menu-mypage">⚪︎my-page</div>
-          <div id="menu-friend">◎friend</div>
-        </div>
-
-        <div id="clock" ref={clockRef}>
-          <div id="time">
-            <span id="hour" className={`time-part ${selectedUnit === "hour" ? "selected" : ""}`} onClick={handleSelectHour}>{String(displayHours).padStart(2,"0")}</span>
-            <span className="colon">:</span>
-            <span id="minute" className={`time-part ${selectedUnit === "minute" ? "selected" : ""}`} onClick={handleSelectMinute}>{String(displayMinutes).padStart(2,"0")}</span>
-            <span className="colon">:</span>
-            <span id="second">{String(displaySeconds).padStart(2,"0")}</span>
+        {!user ?(
+          <div id="login-screen">
+            <button onClick={handleLogin}>Googleでログイン</button>
           </div>
-        </div>
+        ):(
+          <>
+            <div id="menu">
+              <div id="menu-mypage" onClick={() => setShowMyPage(true)}>⚪︎my-page</div>
+              <div id="menu-friend">◎friend</div>
+            </div>
 
-        {!isRunning && (
-          <button id="start-button" onClick={handleStart}>開始</button>
-        )}
-        {isRunning && isFinished && (
-          <button id="end-button" onClick={handleEnd}>終了</button>
-        )}
+            <div id="clock" ref={clockRef}>
+              <div id="time">
+                <span id="hour" className={`time-part ${selectedUnit === "hour" ? "selected" : ""}`} onClick={handleSelectHour}>{String(displayHours).padStart(2,"0")}</span>
+                <span className="colon">:</span>
+                <span id="minute" className={`time-part ${selectedUnit === "minute" ? "selected" : ""}`} onClick={handleSelectMinute}>{String(displayMinutes).padStart(2,"0")}</span>
+                <span className="colon">:</span>
+                <span id="second">{String(displaySeconds).padStart(2,"0")}</span>
+              </div>
+            </div>
 
-        <div id="list">
-          <div id="list-box">
-            <ul id="checklist">
-              {items.map(item => (
-                <li key={item.id}>
-                  <input
-                    type="checkbox"
-                    checked={item.done}
-                    onChange={() => handleToggleItem(item.id)}
-                  />
-                  <span className={`item-text ${item.done ? "done":""}`}>
-                    {item.text}
-                  </span>
-                  {!isRunning && (
-                    <button 
-                      className="remove-button" onClick={() => handleRemoveItem(item.id)}>-</button>
+            {!isRunning && (
+              <button id="start-button" onClick={handleStart}>開始</button>
+            )}
+            {isRunning && isFinished && (
+              <button id="end-button" onClick={handleEnd}>終了</button>
+            )}
+
+            {showMyPage && (
+              <div id="mypage-overlay" onClick={() => setShowMyPage(false)}>
+                <div id="mypage-card" onClick={(e) => e.stopPropagation()}>
+                  <h2>my page</h2>
+                  <div id="mypage-avatar">
+                    {user?.photoURL && <img src={user.photoURL} alt="プロフィール画像"/>}
+                  </div>
+                  <p id="mypage-name">{user?.displayName}</p>
+                  <button id="logout-button" onClick={handleLogout}>ログアウト</button>
+                </div>
+              </div>
+            )}
+
+            <div id="list">
+              <div id="list-box">
+                <ul id="checklist">
+                  {items.map(item => (
+                    <li key={item.id}>
+                      <input
+                        type="checkbox"
+                        checked={item.done}
+                        onChange={() => handleToggleItem(item.id)}
+                      />
+                      <span className={`item-text ${item.done ? "done":""}`}>
+                        {item.text}
+                      </span>
+                      {!isRunning && (
+                        <button 
+                          className="remove-button" onClick={() => handleRemoveItem(item.id)}>-</button>
+                      )}
+                    </li>
+                  ))}
+                  {!isRunning &&(
+                    <li className="new-list">
+                      <input type="checkbox" disabled/>
+                      <input 
+                        type="text" 
+                        className="item-text" 
+                        id="new-item-input" 
+                        placeholder="" 
+                        value={newItemText} 
+                        onChange={(e)=>setNewItemText(e.target.value)}
+                      />
+                      <button id="add-button" onClick={handleAddItem}>+</button>
+                    </li>
                   )}
-                </li>
-              ))}
-              {!isRunning &&(
-                <li className="new-list">
-                  <input type="checkbox" disabled/>
-                  <input 
-                    type="text" 
-                    className="item-text" 
-                    id="new-item-input" 
-                    placeholder="" 
-                    value={newItemText} 
-                    onChange={(e)=>setNewItemText(e.target.value)}
-                  />
-                  <button id="add-button" onClick={handleAddItem}>+</button>
-                </li>
-              )}
-            </ul>
-          </div>
-        </div>
-
+                </ul>
+              </div>
+            </div>
+          </>
+        )}
       </main>
 
       <footer></footer>
