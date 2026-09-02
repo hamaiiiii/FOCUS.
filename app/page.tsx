@@ -28,6 +28,13 @@ export default function Home() {
     setIsRunning(true)
     setRemainingSeconds(5)
     // setRemainingSeconds(hours*3600 + minutes*60)
+
+    //勉強状態
+    if(userData){
+      updateDoc(doc(db, "users", userData.uid),{
+        studyStatus: "studying",
+      })
+    }
   }
 
   // 終了
@@ -72,6 +79,12 @@ export default function Home() {
     setMinutes(0)
     setSelectedUnit("minute")
     setItems([])
+
+    if(userData){
+      updateDoc(doc(db, "users", userData.uid),{
+        studyStatus: "resting",
+      })
+    }
   }
 
   useEffect(()=>{
@@ -229,6 +242,7 @@ export default function Home() {
     displayName: string
     photoURL: string
     friendCode: string
+    studyStatus?: "resting" | "studying"
   }
 
   const[userData, setUserData] = useState<UserData | null>(null)
@@ -458,6 +472,11 @@ export default function Home() {
                             >
                               <div className="friend-avatar" style={{ backgroundImage: `url(${otherUser.photoURL})` }}></div>
                               <span className="friend-name">{otherUser.displayName}</span>
+                              {req.status === "accepted" && (
+                                <span className="friend-status">
+                                  {otherUser.studyStatus === "studying" ? "勉強中":"休憩中"}
+                                </span>
+                              )}
                               {req.status === "pending" && req.toUid === userData?.uid && (
                                 <button className="friend-add-request-button">追加</button>
                               )}
