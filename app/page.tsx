@@ -21,12 +21,13 @@ export default function Home() {
   const[showMyPage, setShowMyPage] = useState(false)
   const[authChecked, setAuthChecked] = useState(false)
   const[minTimeElapsed, setMinTimeElapsed] = useState(false)
+  const[showBreakPage, setShowBreakPage] = useState(false)
 
   //スプラッシュ画面の表示時間
   useEffect(() => {
     const timer = setTimeout(() => {
       setMinTimeElapsed(true)
-    },2000)
+    },1500)
     
     return () => clearTimeout(timer)
   },[])
@@ -257,6 +258,7 @@ export default function Home() {
     photoURL: string
     friendCode: string
     studyStatus?: "resting" | "studying"
+    lastInterruption?: { at:{seconds:number}}
   }
 
   const[userData, setUserData] = useState<UserData | null>(null)
@@ -402,6 +404,68 @@ export default function Home() {
   }
   //
 
+  //中断検知
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if(document.hidden && isRunning && userData){
+        addDoc(collection(db, "interruptions"),{
+          uid: userData.uid,
+          at: new Date(),
+        })
+        setIsRunning(false)
+        setItems([])
+
+        updateDoc(doc(db, "users", userData.uid),{
+          studyStatus:"resting",
+        })
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+  }, [isRunning, userData])
+
+  type Interruption = {
+    id: string
+    uid: string
+    at: { seconds: number}
+  }
+
+  const[interruptions, setInterruptions] = useState<Interruption[]>([])
+
+  const friendUids = friendRequests
+    .filter(req => req.status === "accepted")
+    .map(req => (req.fromUid === userData?.uid ? req.toUid:req.fromUid))
+
+  useEffect(() => {
+    if(friendUids.length === 0){
+      setInterruptions([])
+      return
+    }
+
+    const q = query(
+      collection(db, "interruptions"),
+      where("uid", "in", friendUids)
+    )
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list: Interruption[] = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Interruption[]
+
+      list.sort((a,b) => b.at.seconds - a.at.seconds)
+
+      setInterruptions(list)
+    })
+
+    return () => unsubscribe()
+  },[friendUids.join(",")])
+  //
+
   return (
     <>
       {authChecked && minTimeElapsed && (
@@ -435,9 +499,38 @@ export default function Home() {
               </button>
             </div>
           </div>
+        ): showBreakPage ?(
+              <div id="break-page">
+                <button id="break-back-button" onClick={() => setShowBreakPage(false)}>&lt;</button>
+                <h2 id="break-title">break</h2>
+
+                <ul id="break-list">
+                  {interruptions.map(item => {
+                    const otherUser = friendUserDataMap[item.uid]
+                    if(!otherUser) return null
+
+                    const date = new Date(item.at.seconds*1000)
+                    const dateStr = `${date.getFullYear()}.${String(date.getMonth()+1).padStart(2,"0")}${String(date.getDate()).padStart(2,"0")}`
+                    const timeStr = `${String(date.getHours()).padStart(2,"0")}:${String(date.getMinutes()).padStart(2,"0")}`
+
+                    return(
+                      <li key={item.id}>
+                        <div className="break-datetime">
+                          <div>{dateStr}</div>
+                          <div>{timeStr}</div>
+                        </div>
+                        <span className="break-name">{otherUser.displayName}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
         ):(
           <>
             <div id="menu">
+              <div id="menu-break" onClick={() => setShowBreakPage(true)}>
+                <span id="break-icon">⚪︎</span>break
+              </div>
               <div id="menu-mypage" onClick={() => setShowMyPage(true)}>⚪︎my-page</div>
               <div id="menu-friend" onClick={() => {setShowFriendPage(true); setFriendView("list")}}>◎friend</div>
             </div>
