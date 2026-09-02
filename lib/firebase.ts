@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app"
 import { getAuth, GoogleAuthProvider } from "firebase/auth"
+import { getFirestore } from "firebase/firestore"
 
 const firebaseConfig = {
   apiKey: "AIzaSyAdl5B6YYG1Vgtxy46VOauwQX9kR9vpihg",
@@ -13,3 +14,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const googleProvider = new GoogleAuthProvider()
+
+//TODO: 公開前削除する(Googleアカウントを毎回選ばせるやつ)
+googleProvider.setCustomParameters({
+  prompt: "select_account",
+})
+//
+
+export const db = getFirestore(app)

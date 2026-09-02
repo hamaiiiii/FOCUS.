@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react"
 import { auth, googleProvider } from "@/lib/firebase"
 import { signInWithPopup, onAuthStateChanged, signOut, User } from "firebase/auth"
+import { doc, setDoc, getDoc, getDocs, deleteDoc, collection, addDoc, query, where, onSnapshot, updateDoc } from "firebase/firestore"
+import { db } from "@/lib/firebase" 
 
 export default function Home() {
   const clockRef = useRef<HTMLDivElement>(null)
@@ -21,6 +23,7 @@ export default function Home() {
   // 開始
   function handleStart(){
     if(hours === 0 && minutes === 0) return
+    if(items.length === 0) return
 
     setIsRunning(true)
     setRemainingSeconds(5)
@@ -170,8 +173,28 @@ export default function Home() {
 
   //ログイン・ログアウト
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser)
+
+      if (currentUser) {
+        const userRef = doc(db, "users", currentUser.uid)
+        const userSnap = await getDoc(userRef)
+
+        if (!userSnap.exists()){
+          const newUserData: UserData = {
+            uid: currentUser.uid,
+            displayName: currentUser.displayName ?? "",
+            photoURL: currentUser.photoURL ?? "",
+            friendCode: generateFriendCode(),
+          }
+          await setDoc(userRef, newUserData)
+          setUserData(newUserData)
+        }else{
+          setUserData(userSnap.data() as UserData)
+        }
+      }else{
+        setUserData(null)
+      }
     })
     return () => unsubscribe()
   }, [])
@@ -185,6 +208,169 @@ export default function Home() {
   function handleLogout(){
     signOut(auth)
     setShowMyPage(false)
+  }
+  //
+
+  //フレンドコードの生成
+  function generateFriendCode(){
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    let code = ""
+    for (let i=0; i<8; i++){
+      if(i===4) code += "-"
+      code += chars[Math.floor(Math.random()*chars.length)]
+    }
+    return code
+  }
+  //
+
+  //firebaseのユーザー情報
+  type UserData = {
+    uid: string
+    displayName: string
+    photoURL: string
+    friendCode: string
+  }
+
+  const[userData, setUserData] = useState<UserData | null>(null)
+  //
+
+  //フレンド機能
+  type FriendRequest = {
+    id: string
+    fromUid: string
+    toUid: string
+    status: "pending" | "accepted" | "rejected"
+  }
+
+  const[showFriendPage, setShowFriendPage] = useState(false)
+  const[friendView, setFriendView] = useState<"list" | "new" | "detail">("list")
+  const[friendCodeInput, setFriendCodeInput] = useState("")
+  const[friendRequests, setFriendRequests] = useState<FriendRequest[]>([])
+  const[friendUserDataMap, setFriendUserDataMap] = useState<Record<string, UserData>>({})
+  const[selectedFriend, setSelectedFriend] = useState<{ request: FriendRequest, user: UserData} | null>(null)
+
+  async function handleApplyFriend(){
+    if(friendCodeInput.trim() === "") return
+    if(!userData) return
+
+    const usersRef = collection(db, "users")
+    const q = query(usersRef, where("friendCode", "==", friendCodeInput.trim()))
+    const snapshot = await getDocs(q)
+
+    if(snapshot.empty){
+      alert("そのフレンドコードのユーザーが見つかりません")
+      return
+    }
+
+    const targetUser = snapshot.docs[0].data() as UserData
+
+    if(targetUser.uid === userData.uid){
+      alert("自分以外のIDを入力してください")
+      return
+    }
+
+    const alreadyExists = friendRequests.some(req =>
+      (req.fromUid === userData.uid && req.toUid === targetUser.uid) ||
+      (req.fromUid === targetUser.uid && req.toUid === userData.uid)
+    )
+
+    if(alreadyExists) {
+      alert("すでに申請済み、またはフレンドです")
+      return
+    }
+
+    await addDoc(collection(db, "friendRequests"),{
+      fromUid: userData.uid,
+      toUid: targetUser.uid,
+      status: "pending",
+      createdAt: new Date(),
+    })
+
+    alert("申請しました。")
+    setFriendCodeInput("")
+    setFriendView("list")
+  }
+
+  const [requesterResults, setRequesterResults] = useState<FriendRequest[]>([])
+  const [receiverResults, setReceiverResults] = useState<FriendRequest[]>([])
+
+  useEffect(() => {
+    if(!userData) return
+    
+    const qAsRequaester = query(
+      collection(db, "friendRequests"),
+      where("fromUid", "==", userData.uid)
+    )
+
+    const qAsReceiver = query(
+      collection(db, "friendRequests"),
+      where("toUid", "==", userData.uid)
+    )
+
+    const unsubscribe1 = onSnapshot(qAsRequaester, (snapshot)=> {
+      setRequesterResults(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data()})) as FriendRequest[])
+    })
+
+    const unsubscribe2 = onSnapshot(qAsReceiver, (snapshot)=> {
+      setReceiverResults(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data()})) as FriendRequest[])
+    })
+
+    return () => {
+      unsubscribe1()
+      unsubscribe2()
+    }
+  }, [userData])
+
+  useEffect(() => {
+    setFriendRequests([...requesterResults, ...receiverResults])
+  },[requesterResults, receiverResults])
+
+  useEffect(() => {
+    async function fetchFriendUserData() {
+      const newMap: Record<string, UserData> = {}
+
+      for(const req of friendRequests) {
+        const otherUid = req.fromUid === userData?.uid ? req.toUid:req.fromUid
+        const userRef = doc(db, "users", otherUid)
+        const userSnap = await getDoc(userRef)
+        if(userSnap.exists()){
+          newMap[otherUid] = userSnap.data() as UserData
+        }
+      }
+
+      setFriendUserDataMap(newMap)
+    }
+
+    if(friendRequests.length > 0){
+      fetchFriendUserData()
+    }
+  }, [friendRequests, userData])
+
+  function handleOpenFriendDetail(req:FriendRequest, otherUser: UserData){
+    setSelectedFriend({ request: req, user:otherUser })
+    setFriendView("detail")
+  }
+
+  async function handleAcceptFriend(){
+    if(!selectedFriend) return
+
+    const reqRef = doc(db, "friendRequests", selectedFriend.request.id)
+    await updateDoc(reqRef, {
+      status: "accepted",
+    })
+
+    setFriendView("list")
+    setSelectedFriend(null)
+  }
+
+  async function handleRejectFriend(){
+    if(!selectedFriend) return
+
+    const reqRef = doc(db, "friendRequests", selectedFriend.request.id)
+    await deleteDoc(reqRef)
+
+    setFriendView("list")
+    setSelectedFriend(null)
   }
   //
 
@@ -212,7 +398,7 @@ export default function Home() {
           <>
             <div id="menu">
               <div id="menu-mypage" onClick={() => setShowMyPage(true)}>⚪︎my-page</div>
-              <div id="menu-friend">◎friend</div>
+              <div id="menu-friend" onClick={() => {setShowFriendPage(true); setFriendView("list")}}>◎friend</div>
             </div>
 
             <div id="clock" ref={clockRef}>
@@ -240,7 +426,89 @@ export default function Home() {
                     {user?.photoURL && <img src={user.photoURL} alt="プロフィール画像"/>}
                   </div>
                   <p id="mypage-name">{user?.displayName}</p>
+                  <p id="mypage-friendcode">Friend Code：{userData?.friendCode}</p>
                   <button id="logout-button" onClick={handleLogout}>ログアウト</button>
+                </div>
+              </div>
+            )}
+
+            {showFriendPage && (
+              <div id="friend-overlay" onClick={() => setShowFriendPage(false)}>
+                <div id="friend-card" onClick={(e) => e.stopPropagation()}>
+                  {friendView === "list" && (
+                    <>
+                      <h2 id="friend-title">friend</h2>
+                      <ul id="friend-list">
+                        {friendRequests
+                        .filter(req => {
+                          if(req.status === "pending" && req.fromUid === userData?.uid){
+                            return false
+                          }
+                          return true
+                        })
+                        .map(req => {
+                          const otherUid = req.fromUid === userData?.uid ? req.toUid : req.fromUid
+                          const otherUser = friendUserDataMap[otherUid]
+
+                          if(!otherUser) return null
+                          return(
+                            <li 
+                              key={req.id}
+                              onClick={()=> handleOpenFriendDetail(req,otherUser)}
+                            >
+                              <div className="friend-avatar" style={{ backgroundImage: `url(${otherUser.photoURL})` }}></div>
+                              <span className="friend-name">{otherUser.displayName}</span>
+                              {req.status === "pending" && req.toUid === userData?.uid && (
+                                <button className="friend-add-request-button">追加</button>
+                              )}
+                            </li>
+                          )
+                        })}
+                      </ul>
+                      <div id="friend-add-button" onClick={() => setFriendView("new")}>+</div>
+                    </>
+                  )}
+                  {friendView === "new" && (
+                    <>
+                      <h2 id="new-friend-title">new friend</h2>
+                      <label id="friend-code-label">Friend Code</label>
+                      <input
+                        type="text"
+                        id="friend-code-input"
+                        value={friendCodeInput}
+                        onChange={(e) => setFriendCodeInput(e.target.value)}
+                      />
+                      <button id="apply-button" onClick={handleApplyFriend}>申請</button>
+                    </>
+                  )}
+                  {friendView === "detail" && selectedFriend && (
+                    <>
+                      {selectedFriend.request.status === "accepted" ? (
+                        <>
+                          <h2>friend page</h2>
+                          <div
+                            className="friend-detail-avatar"
+                            style={{backgroundImage:`url(${selectedFriend.user.photoURL})`}}
+                          ></div>
+                          <p className="friend-detail-name">{selectedFriend.user.displayName}</p>
+                          <p className="friend-detail-userid">User ID：{selectedFriend.user.uid.slice(0.8)}</p>
+                          <p className="friend-detail-code">Friend Cord：{selectedFriend.user.friendCode}</p>
+                        </>
+                      ):(
+                        <>
+                          <h2>not friend page</h2>
+                          <div
+                            className="friend-detail-avatar"
+                            style={{backgroundImage: `url(${selectedFriend.user.photoURL})`}}></div>
+                          <p className="friend-detail-name">{selectedFriend.user.displayName}</p>
+                          <div className="friend-detail-buttons">
+                            <button onClick={handleAcceptFriend}>追加</button>
+                            <button onClick={handleRejectFriend}>拒否</button>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             )}

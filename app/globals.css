@@ -138,6 +138,19 @@ header{
   margin: 0 0 20px;
 }
 
+#mypage-friendcode {
+  color: rgb(25, 144, 25);
+}
+
+.friend-avatar, .friend-detail-avatar{
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-color: #d9d9d9;
+}
+
 #logout-button {
   background: #f4a3a3;
   border: none;
