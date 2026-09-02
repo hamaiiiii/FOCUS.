@@ -451,7 +451,7 @@ export default function Home() {
                 <div id="friend-card" onClick={(e) => e.stopPropagation()}>
                   {friendView === "list" && (
                     <>
-                      <h2 id="friend-title">friend</h2>
+                      <h2 id="friend-list-title">friend</h2>
                       <ul id="friend-list">
                         {friendRequests
                         .filter(req => {
@@ -489,7 +489,7 @@ export default function Home() {
                   )}
                   {friendView === "new" && (
                     <>
-                      <h2 id="new-friend-title">new friend</h2>
+                      <h2 id="newfriend-title">new friend</h2>
                       <label id="friend-code-label">Friend Code</label>
                       <input
                         type="text"
@@ -510,7 +510,7 @@ export default function Home() {
                             style={{backgroundImage:`url(${selectedFriend.user.photoURL})`}}
                           ></div>
                           <p className="friend-detail-name">{selectedFriend.user.displayName}</p>
-                          <p className="friend-detail-userid">User ID：{selectedFriend.user.uid.slice(0.8)}</p>
+                          <p className="friend-detail-userid">User ID：{selectedFriend.user.uid.slice(0,8)}</p>
                           <p className="friend-detail-code">Friend Cord：{selectedFriend.user.friendCode}</p>
                         </>
                       ):(

@@ -34,7 +34,7 @@ header{
 }
 
 #end-screen p{
-  margin-top:280px;
+  margin-top:230px;
   font-weight:bold;
 }
 
@@ -53,7 +53,7 @@ header{
 #clock{
   display:flex;
   justify-content:center;
-  margin:90px 30px;
+  margin:70px 30px 50px;
   touch-action:none;
 }
 
@@ -77,10 +77,10 @@ header{
   display:block;
   margin-left:auto;
   margin-right:auto;
-  padding:15px 25px;
+  padding:10px 20px;
   border:2px solid rgb(186, 186, 186);
   background:rgb(244, 244, 244);
-  font-size:clamp(15px,4vw,25px);
+  font-size:clamp(15px,4vw,20px);
   font-weight:bold;
   border-radius:15px;
   color:black;
@@ -92,7 +92,7 @@ header{
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(44, 44, 44, 0.1);
   display: flex;
   justify-content: center;
   z-index: 100;
@@ -112,24 +112,15 @@ header{
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-#mypage-card h2 {
-  font-size: 22px;
-  margin: 0 0 20px;
-}
-
-#mypage-avatar {
-  width: 120px;
-  height: 120px;
+#mypage-avatar img, .friend-detail-avatar{
+  width: clamp(90px,8vw,105px);
+  height: clamp(90px,8vw,105px);
   border-radius: 50%;
   background: #d9d9d9;
   overflow: hidden;
-  margin-bottom: 15px;
-}
-
-#mypage-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  background-size: cover;
+  background-position: center;
+  margin:20px;
 }
 
 #mypage-name {
@@ -142,24 +133,175 @@ header{
   color: rgb(25, 144, 25);
 }
 
-.friend-avatar, .friend-detail-avatar{
-  width: 50px;
-  height: 50px;
+.friend-avatar{
+  width: clamp(40px,8vw,55px);
+  height: clamp(40px,8vw,55px);
   border-radius: 50%;
   background-size: cover;
   background-position: center;
   background-color: #d9d9d9;
 }
 
+#friend-overlay{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(44, 44, 44, 0.1);
+  display: flex;
+  justify-content: center;
+  z-index: 100;
+}
+
+#friend-card {
+  background: white;
+  width: 80%;
+  max-width: 380px;
+  margin-top: 180px;
+  height: fit-content;
+  max-height: 70vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+#friend-list-title {
+  color: rgb(25, 144, 25);
+}
+
+#newfriend-title{
+  color:#E3B559;
+}
+
+h2{
+  font-size: 24px;
+  margin: 10px 0 15px;
+}
+
+#friend-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+#friend-list li {
+  display: flex;
+  align-items: center;
+  justify-content:space-between;
+  padding: 15px 15px;
+  border-bottom: 1px solid #ccc;
+  cursor: pointer;
+  position:relative;
+}
+
+.friend-name {
+  font-size:clamp(17px,4vw,24px);
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+}
+
+.friend-status {
+  font-size: clamp(10px,4vw,17px);
+  font-weight:bold;
+}
+
+.friend-add-request-button {
+  background: rgb(244, 244, 244);
+  border: 1px solid rgb(186, 186, 186);
+  border-radius: 15px;
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#friend-add-button {
+  width: 100%;
+  text-align: center;
+  font-size: 24px;
+  padding: 15px 0;
+  border-bottom: 1px solid #ccc;
+  cursor: pointer;
+}
+
+#friend-code-label {
+  align-self: flex-start;
+  font-size: 16px;
+  margin: 10px 0 5px;
+}
+
+#friend-code-input {
+  width: 100%;
+  border: 1px solid black;
+  padding: 12px;
+  font-size: 13px;
+  margin-bottom: 25px;
+  box-sizing: border-box;
+}
+
+#apply-button {
+  background: rgb(244, 244, 244);
+  border: 1px solid rgb(186, 186, 186);
+  border-radius: 15px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.friend-detail-name {
+  font-weight: bold;
+  font-size: 20px;
+  margin: 0 0 15px;
+}
+
+.friend-detail-userid {
+  font-size: 16px;
+  margin: 0 0 5px;
+}
+
+.friend-detail-code {
+  color: rgb(25, 144, 25);
+  font-size: 16px;
+  margin: 0 0 20px;
+}
+
+.friend-detail-buttons {
+  display: flex;
+  gap: 20px;
+  margin-top: 15px;
+}
+
+.friend-detail-buttons button {
+  border: 1px solid black;
+  border-radius: 30px;
+  background: white;
+  padding: 10px 30px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.friend-detail-buttons button:last-child {
+  color: red;
+  border-color: red;
+}
+
 #logout-button {
   background: #f4a3a3;
   border: none;
   color: black;
-  padding: 12px 30px;
-  border-radius: 30px;
-  font-size: 15px;
-  font-weight: bold;
+  padding: 10px 17px;
+  border-radius: 20px;
+  font-size: 10px;
   cursor: pointer;
+  margin:10px 0;
 }
 
 #menu-mypage {
@@ -185,12 +327,14 @@ header{
   list-style:none;
   margin:0;
   padding:0;
+  border-bottom:1px solid #ccc;
 }
 
 #checklist li{
   display:flex;
   align-items:center;
   padding:20px 0;
+
   border-bottom:1px solid #ccc;
 }
 
