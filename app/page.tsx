@@ -19,6 +19,18 @@ export default function Home() {
   const[typingDone, setTypingDone] = useState(false)
   const[user, setUser] = useState<User | null>(null)
   const[showMyPage, setShowMyPage] = useState(false)
+  const[authChecked, setAuthChecked] = useState(false)
+  const[minTimeElapsed, setMinTimeElapsed] = useState(false)
+
+  //スプラッシュ画面の表示時間
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinTimeElapsed(true)
+    },2000)
+    
+    return () => clearTimeout(timer)
+  },[])
+  //
 
   // 開始
   function handleStart(){
@@ -208,6 +220,8 @@ export default function Home() {
       }else{
         setUserData(null)
       }
+
+      setAuthChecked(true)
     })
     return () => unsubscribe()
   }, [])
@@ -390,12 +404,14 @@ export default function Home() {
 
   return (
     <>
-      <header>
-        <div id="title">
-          <div id="title-text">FOCUS</div>
-          <div id="title-dot">.</div>
-        </div>
-      </header>
+      {authChecked && minTimeElapsed && (
+        <header>
+          <div id="title">
+            <div id="title-text">FOCUS</div>
+            <div id="title-dot">.</div>
+          </div>
+        </header>
+      )}
 
       {showEndScreen && (
         <div id="end-screen" onClick={handleTapEndScreen}>
@@ -404,9 +420,20 @@ export default function Home() {
       )}
 
       <main>
-        {!user ?(
+        {!authChecked || !minTimeElapsed ? (
+          <div id="splash-screen">
+            <div id="splash-title">
+              <span id="splash-title-text">FOCUS</span>
+              <span id="splash-title-dot">.</span>
+            </div>
+          </div>
+        ): !user ?(
           <div id="login-screen">
-            <button onClick={handleLogin}>Googleでログイン</button>
+            <div id="login-card">
+              <button id="google-login-button" onClick={handleLogin}>
+                <img src="/google-icon.svg" alt="Google"/>Googleでログイン
+              </button>
+            </div>
           </div>
         ):(
           <>
