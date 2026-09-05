@@ -458,6 +458,13 @@ h2{
   margin:0 10px;
 }
 
+#new-item-input{
+  border:none;
+  outline:none;
+  background:transparent;
+  padding:0;
+}
+
 #checklist li .remove-button,
 #checklist li #add-button{
   background:none;
