@@ -9,7 +9,7 @@ import { db } from "@/lib/firebase"
 export default function Home() {
   const clockRef = useRef<HTMLDivElement>(null)
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const[selectedUnit, setSelectedUnit] = useState<"hour" | "minute">("minute")
+  const[selectedUnit, setSelectedUnit] = useState<"hour" | "minute" | "none">("minute")
   const[isRunning, setIsRunning] = useState(false)
   const[hours, setHours] = useState(1)
   const[minutes, setMinutes] = useState(10)
@@ -48,6 +48,7 @@ export default function Home() {
     setIsRunning(true)
     //setRemainingSeconds(5)
     setRemainingSeconds(hours*3600 + minutes*60)
+    setSelectedUnit("none")
 
     //勉強状態
     if(userData){
