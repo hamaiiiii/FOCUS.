@@ -26,7 +26,8 @@ export default function Home() {
 
   //info
   const updateLogs = [
-    {date:"2026.0905",message:"infomationページを追加しました"}
+    {date:"2026.0905",message:"infomationページを追加しました"},
+    {date:"2026.0905",message:"待望のアプリ完成!これで赤点は0かな"}
   ]
   //
 
