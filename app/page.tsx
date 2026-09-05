@@ -136,9 +136,12 @@ export default function Home() {
   }
 
   // 時間カウント
+  const touchStartYRef = useRef(0)
+
   useEffect(()=>{
     const clockE1 = clockRef.current
     if(!clockE1) return
+
     function handleWheelNative(event:WheelEvent){
       event.preventDefault()
       if(isRunning) return
@@ -155,9 +158,42 @@ export default function Home() {
       }
     }
 
+    function handleTouchStart(event: TouchEvent){
+      touchStartYRef.current = event.touches[0].clientY
+    }
+
+    function handleTouchMove(event: TouchEvent){
+      event.preventDefault()
+      if(isRunning) return
+
+      const currentY = event.touches[0].clientY
+      const diff = touchStartYRef.current - currentY
+
+      if(Math.abs(diff) > 30){
+        const direction = diff > 0 ? -1 : 1
+
+        if(selectedUnit === "hour"){
+          setHours(prev => Math.max(0, prev+direction))
+        }else{
+          setMinutes(prev => {
+            let next = prev + direction*10
+            if(next < 0) next=50
+            if(next >= 60) next=0
+            return next
+          })
+        }
+        touchStartYRef.current = currentY
+      }
+    }
+
     clockE1.addEventListener("wheel",handleWheelNative,{passive:false})
+    clockE1.addEventListener("touchstart",handleTouchStart)
+    clockE1.addEventListener("touchmove",handleTouchMove,{passive:false})
+
     return() =>{
       clockE1.removeEventListener("wheel",handleWheelNative)
+      clockE1.removeEventListener("touchstart",handleTouchStart)
+      clockE1.removeEventListener("touchmove",handleTouchMove)
     }
   },[isRunning, selectedUnit])
 
