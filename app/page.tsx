@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { auth, googleProvider } from "@/lib/firebase"
 import { signInWithPopup, onAuthStateChanged, signOut, User } from "firebase/auth"
-import { doc, setDoc, getDoc, getDocs, deleteDoc, collection, addDoc, query, where, onSnapshot, updateDoc } from "firebase/firestore"
+import { doc, setDoc, getDoc, getDocs, deleteDoc, collection, addDoc, query, where, onSnapshot, updateDoc, increment } from "firebase/firestore"
 import { db } from "@/lib/firebase" 
 
 export default function Home() {
@@ -22,6 +22,13 @@ export default function Home() {
   const[authChecked, setAuthChecked] = useState(false)
   const[minTimeElapsed, setMinTimeElapsed] = useState(false)
   const[showBreakPage, setShowBreakPage] = useState(false)
+  const[shoInfoPage, setShowInfoPage] = useState(false)
+
+  //info
+  const updateLogs = [
+    {date:"2026.0905",message:"infomationページを追加しました"}
+  ]
+  //
 
   //スプラッシュ画面の表示時間
   useEffect(() => {
@@ -46,6 +53,7 @@ export default function Home() {
     if(userData){
       updateDoc(doc(db, "users", userData.uid),{
         studyStatus: "studying",
+        totalSessions:increment(1),
       })
     }
   }
@@ -212,6 +220,8 @@ export default function Home() {
             displayName: currentUser.displayName ?? "",
             photoURL: currentUser.photoURL ?? "",
             friendCode: generateFriendCode(),
+            totalSessions:0,
+            interruptedSessions:0,
           }
           await setDoc(userRef, newUserData)
           setUserData(newUserData)
@@ -259,6 +269,8 @@ export default function Home() {
     friendCode: string
     studyStatus?: "resting" | "studying"
     lastInterruption?: { at:{seconds:number}}
+    totalSessions?: number
+    interruptedSessions?: number
   }
 
   const[userData, setUserData] = useState<UserData | null>(null)
@@ -417,6 +429,7 @@ export default function Home() {
 
         updateDoc(doc(db, "users", userData.uid),{
           studyStatus:"resting",
+          interruptedSessions:increment(1),
         })
       }
     }
@@ -466,6 +479,16 @@ export default function Home() {
   },[friendUids.join(",")])
   //
 
+  //中断率
+  function calcInterruptionRate(data: UserData | null):string{
+    if(!data||!data.totalSessions||data.totalSessions === 0){
+      return "0.0"
+    }
+    const rate = ((data.interruptedSessions ?? 0)/data.totalSessions)*100
+    return rate.toFixed(1)
+  }
+  //
+
   return (
     <>
       {authChecked && minTimeElapsed && (
@@ -499,10 +522,28 @@ export default function Home() {
               </button>
             </div>
           </div>
+        ): shoInfoPage?(
+          <div id="info-page">
+            <div id="info-page-set">
+                <button id="info-back-button" onClick={() => setShowInfoPage(false)}>&lt;</button>
+                <h2 id="info-title">info</h2>
+            </div>
+
+            <ul id="info-list">
+              {updateLogs.map((log,index) => (
+                <li key={index}>
+                  <div className="info-date">{log.date}</div>
+                  <span className="info-message">{log.message}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         ): showBreakPage ?(
               <div id="break-page">
+               <div id="break-page-set">
                 <button id="break-back-button" onClick={() => setShowBreakPage(false)}>&lt;</button>
-                <h2 id="break-title">break</h2>
+                <h2 id="break-title">break news</h2>
+               </div>
 
                 <ul id="break-list">
                   {interruptions.map(item => {
@@ -528,11 +569,14 @@ export default function Home() {
         ):(
           <>
             <div id="menu">
-              <div id="menu-break" onClick={() => setShowBreakPage(true)}>
-                <span id="break-icon">⚪︎</span>break
+              <div id="menu-info" onClick={() => setShowInfoPage(true)}>info</div>
+              <div id="menu-right">
+                <div id="menu-break" onClick={() => setShowBreakPage(true)}>
+                  <span id="break-icon">⚪︎</span>break
+                </div>
+                <div id="menu-mypage" onClick={() => setShowMyPage(true)}>⚪︎my-page</div>
+                <div id="menu-friend" onClick={() => {setShowFriendPage(true); setFriendView("list")}}>◎friend</div>
               </div>
-              <div id="menu-mypage" onClick={() => setShowMyPage(true)}>⚪︎my-page</div>
-              <div id="menu-friend" onClick={() => {setShowFriendPage(true); setFriendView("list")}}>◎friend</div>
             </div>
 
             <div id="clock" ref={clockRef}>
@@ -560,7 +604,13 @@ export default function Home() {
                     {user?.photoURL && <img src={user.photoURL} alt="プロフィール画像"/>}
                   </div>
                   <p id="mypage-name">{user?.displayName}</p>
-                  <p id="mypage-friendcode">Friend Code：{userData?.friendCode}</p>
+                  <div id="friendcode">
+                    <p id="friendcode-title">Friend Code：</p>
+                    <p id="friendcode-code">{userData?.friendCode}</p>
+                  </div>
+                  <p id="interruption-rate">
+                    中断率：{calcInterruptionRate(userData)}%
+                  </p>
                   <button id="logout-button" onClick={handleLogout}>ログアウト</button>
                 </div>
               </div>
@@ -630,8 +680,13 @@ export default function Home() {
                             style={{backgroundImage:`url(${selectedFriend.user.photoURL})`}}
                           ></div>
                           <p className="friend-detail-name">{selectedFriend.user.displayName}</p>
-                          <p className="friend-detail-userid">User ID：{selectedFriend.user.uid.slice(0,8)}</p>
-                          <p className="friend-detail-code">Friend Cord：{selectedFriend.user.friendCode}</p>
+                          <div id="friendcode">
+                            <p id="friendcode-title">Friend Code：</p>
+                            <p id="friendcode-code">{selectedFriend.user.friendCode}</p>
+                          </div>
+                          <p id="interruption-rate">
+                            中断率：{calcInterruptionRate(selectedFriend.user)}%
+                          </p>
                         </>
                       ):(
                         <>
