@@ -46,8 +46,8 @@ export default function Home() {
     if(items.length === 0) return
 
     setIsRunning(true)
-    setRemainingSeconds(5)
-    // setRemainingSeconds(hours*3600 + minutes*60)
+    //setRemainingSeconds(5)
+    setRemainingSeconds(hours*3600 + minutes*60)
 
     //勉強状態
     if(userData){

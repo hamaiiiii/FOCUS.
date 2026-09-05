@@ -15,10 +15,10 @@ const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const googleProvider = new GoogleAuthProvider()
 
-//TODO: 公開前削除する(Googleアカウントを毎回選ばせるやつ)
+/*TODO: 公開前削除する(Googleアカウントを毎回選ばせるやつ)
 googleProvider.setCustomParameters({
   prompt: "select_account",
 })
-//
+*/
 
 export const db = getFirestore(app)
