@@ -424,6 +424,8 @@ h2{
   display:block;
   padding:0 20px 10px;
   width:80%;
+  box-sizing:border-box;
+  max-width:100%;
 }
 
 #checklist{
@@ -437,8 +439,8 @@ h2{
   display:flex;
   align-items:center;
   padding:20px 0;
-
   border-bottom:1px solid #ccc;
+  box-sizing:border-box;
 }
 
 #checklist li:last-child{
@@ -446,16 +448,18 @@ h2{
 }
 
 #checklist li input[type="checkbox"]{
-  width:20px;
-  height:20px;
+  width:18px;
+  height:18px;
   margin:0;
+  flex-shrink:0;
 }
 
 #checklist li .item-text{
   flex:1;
+  min-width:0;
   text-align:center;
-  font-size:18px;
-  margin:0 10px;
+  font-size:clamp(14px, 4vw, 18px);
+  margin:0 8px;
 }
 
 #new-item-input{
@@ -469,10 +473,11 @@ h2{
 #checklist li #add-button{
   background:none;
   border:none;
-  font-size:20px;
+  font-size:clamp(16px, 4vw, 20px);
   cursor:pointer;
-  width:30px;
+  width:auto;
   color:black;
+  flex-shrink:0;
 }
 
 #info-page {
